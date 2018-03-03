@@ -144,6 +144,7 @@ class Js_Display_Schedule_Admin {
 		include plugin_dir_path( __FILE__ ).'partials/js-display-schedule-admin-display.php';
 	}
 
+	// Add custom fields for the plugin
 	public function crb_attach_theme_options() {
 		$labels = array(
 			'plural_name' => 'Intervals',
@@ -160,7 +161,7 @@ class Js_Display_Schedule_Admin {
 					) )
 			) );
 
-		Container::make( 'post_meta', __( 'Display Schedule Type', 'crb' ) )
+		Container::make( 'post_meta', __( 'Recurring Display Schedule', 'crb' ) )
 			->where( 'post_type', '=', 'jsdisplay' )
 			->add_fields( array(
 				Field::make( 'select', 'jsd_rs_glob', 'Schedule Interval' )
@@ -172,20 +173,39 @@ class Js_Display_Schedule_Admin {
 					->add_options( array(
 						'whole_day' => 'Whole Day',
 						'custom_hours' => 'Custom Hours',						
-					) )
+					) ),
+				Field::make( 'time', 'jsd_rs_hours_start', 'Start Time' )
+					->set_required( false )
+					->set_default_value('12:00 AM'),
+				Field::make( 'time', 'jsd_rs_hours_finish', 'Finish Time' )
+					->set_required( false )
+					->set_default_value('11:59 PM'),
 			) );
 
 		Container::make( 'post_meta', __( 'Uneven Display Schedule', 'crb' ) )
 			->where( 'post_type', '=', 'jsdisplay' )
 			->add_fields( array(
 				Field::make( 'complex', 'jsd_us', 'Display Intervals' )
-					->set_min(1)
 					->setup_labels($labels)
 					->set_layout('grid')
 					->add_fields( array(
-						Field::make( 'date_time', 'jsd_us_time_start', 'Display Interval Start')->set_required( true ),
-						Field::make( 'date_time', 'jsd_us_time_end', 'Display Interval End' )->set_required( true ),
+						Field::make( 'date_time', 'jsd_us_time_start', 'Display Interval Start')
+							->set_required( true ),
+						Field::make( 'date_time', 'jsd_us_time_end', 'Display Interval End' )
+							->set_required( true ),
 					) ),
 			) );
-    }
+	}
+	
+	public function generateJsSchedule($post_ID, $post) {
+		$the_query = new WP_Query(['post_type' => 'jsdisplay']);
+		if ( $the_query->have_posts() ) {
+			while ( $the_query->have_posts() ) {
+				$the_query->the_post();
+				echo '<li>' . get_the_permalink() . '</li>';
+			}
+		} 
+		//var_dump(get_post_meta($post->ID));
+		die();
+	}
 }

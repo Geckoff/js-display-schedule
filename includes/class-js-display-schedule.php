@@ -160,6 +160,9 @@ class Js_Display_Schedule {
 		// carbon fields
 		$this->loader->add_action( 'carbon_fields_register_fields', $plugin_admin, 'crb_attach_theme_options' );
 
+		// generate js schedule
+		$this->loader->add_action( 'save_post', $plugin_admin, 'generateJsSchedule', 10, 2 );
+
 		//scripts and styles
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );	
