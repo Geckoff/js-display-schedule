@@ -31,6 +31,7 @@
 			this.toggleScheduleTypes();
 			this.populateReccuringSchedHours();
 			this.toggleReccuringScheduleHours();
+			this.saveReccuringScheduleTime();
 			this.eventHandlers();	
 		}
 
@@ -71,6 +72,11 @@
 				$('#carbon_fields_container_recurring_display_schedule .carbon-time'),
 				false	
 			)	
+		}
+
+		this.saveReccuringScheduleTime = function() {
+			$('#carbon_fields_container_recurring_display_schedule .carbon-time button').click();	
+			$('#carbon_fields_container_recurring_display_schedule .carbon-time button').click();	
 		}
 
 		this.eventHandlers = function(){

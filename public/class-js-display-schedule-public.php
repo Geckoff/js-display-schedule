@@ -97,6 +97,7 @@ class Js_Display_Schedule_Public {
 		 */
 
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/js-display-schedule-public.js', array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( "jsd-schedules", plugin_dir_url( __FILE__ ) . 'js/schedule.js', array( 'jquery' ), $this->version, false );
 
 	}
 

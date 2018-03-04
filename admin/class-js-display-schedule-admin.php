@@ -151,6 +151,23 @@ class Js_Display_Schedule_Admin {
 			'singular_name' => 'Interval',
 		);
 
+		Container::make( 'post_meta', __( 'General Info', 'crb' ) )
+			->where( 'post_type', '=', 'jsdisplay' )
+			->add_fields( array(
+				Field::make( 'text', 'jsdid', 'ID' )
+					->set_attribute( 'pattern', '[a-z]+[a-z0-9-_]*[a-z0-9]+' )
+					->set_required( true )
+					->set_help_text('May contain only lowercase letters, numbers, "-" and "_" characters and should start with a letter and end with a letter or a number.'),
+				Field::make( 'select', 'jsd_css_display', 'CSS display type' )
+					->add_options( array(
+						'block' => 'Block',
+						'inline' => 'Inline',
+						'inline-block' => 'Inline Block',
+						'flex' => 'Flex',
+					) )
+					->set_help_text('Used for JS display functionality.')
+			) );
+
 		Container::make( 'post_meta', __( 'Display Schedule Type', 'crb' ) )
 			->where( 'post_type', '=', 'jsdisplay' )
 			->add_fields( array(
@@ -161,13 +178,26 @@ class Js_Display_Schedule_Admin {
 					) )
 			) );
 
+
+
 		Container::make( 'post_meta', __( 'Recurring Display Schedule', 'crb' ) )
 			->where( 'post_type', '=', 'jsdisplay' )
 			->add_fields( array(
 				Field::make( 'select', 'jsd_rs_glob', 'Schedule Interval' )
 					->add_options( array(
+						'jsd_rs_every_day' => 'Every Day',
 						'jsd_rs_every_other_day' => 'Every Other Day',
 						'jsd_rs_every_other_week' => 'Every Other Week',
+						'jsd_rs_every_even_date' => 'Every Even Date',
+						'jsd_rs_every_odd_date' => 'Every Odd Date',
+						'jsd_rs_every_monday' => 'Every Monday',
+						'jsd_rs_every_tuesday' => 'Every Tuesday',
+						'jsd_rs_every_wednesday' => 'Every Wednesday',
+						'jsd_rs_every_thursday' => 'Every Thursday',
+						'jsd_rs_every_friday' => 'Every Friday',
+						'jsd_rs_every_saturday' => 'Every Saturday',
+						'jsd_rs_every_sunday' => 'Every Sunday',
+						'jsd_rs_every_weekend' => 'Every Weekend',
 					) ),
 				Field::make( 'radio', 'jsd_rs_type', 'Time Settings' )
 					->add_options( array(
@@ -175,10 +205,10 @@ class Js_Display_Schedule_Admin {
 						'custom_hours' => 'Custom Hours',						
 					) ),
 				Field::make( 'time', 'jsd_rs_hours_start', 'Start Time' )
-					->set_required( false )
+					->set_required( true )
 					->set_default_value('12:00 AM'),
 				Field::make( 'time', 'jsd_rs_hours_finish', 'Finish Time' )
-					->set_required( false )
+					->set_required( true )
 					->set_default_value('11:59 PM'),
 			) );
 
@@ -195,17 +225,75 @@ class Js_Display_Schedule_Admin {
 							->set_required( true ),
 					) ),
 			) );
+
+		Container::make( 'post_meta', __( 'Description', 'crb' ) )
+			->where( 'post_type', '=', 'jsdisplay' )
+			->add_fields( array(
+				Field::make( 'textarea', 'jsd_description', '' )
+    				->set_rows(4)
+			) );
 	}
 	
+	// building schedule array and write it into json format
 	public function generateJsSchedule($post_ID, $post) {
-		$the_query = new WP_Query(['post_type' => 'jsdisplay']);
-		if ( $the_query->have_posts() ) {
-			while ( $the_query->have_posts() ) {
-				$the_query->the_post();
-				echo '<li>' . get_the_permalink() . '</li>';
-			}
-		} 
-		//var_dump(get_post_meta($post->ID));
-		die();
+		if (get_post_type($post_ID) == 'jsdisplay') {
+			$the_query = new WP_Query(['post_type' => 'jsdisplay']);
+			$jsd_arr = [];
+			if ( $the_query->have_posts() ) {
+				while ( $the_query->have_posts() ) {
+					$the_query->the_post();
+					
+					$jsd_current = [];
+					$post_id = get_the_ID();
+					//$jsd_id = carbon_get_post_meta($post_id, 'jsdid');
+					$jsd_id = get_post_meta($post_id, "_jsdid")[0];
+					//$jsd_css_display = carbon_get_post_meta($post_id, 'jsd_css_display');
+					$jsd_css_display = get_post_meta($post_id, "_jsd_css_display")[0];
+					$jsd_sched_type = carbon_get_post_meta($post_id, 'jsd_type');
+
+					// uneven schedule
+					$intervals = carbon_get_post_meta($post_id, 'jsd_us');
+					if ($intervals) {
+						$jsd_uneve_intervals = [];
+						foreach ( $intervals as $interval ) {
+							$start_interval = strtotime($interval["jsd_us_time_start"]);
+							$end_interval =  strtotime($interval["jsd_us_time_end"]);
+							$jsd_uneve_intervals[] = ['us_time_start' => $start_interval, 'us_time_end' => $end_interval];
+						}
+					} else {
+						$jsd_uneve_intervals = false;
+					}
+
+					//recurring schedule
+					$jsd_recurring_schedule_day = carbon_get_post_meta($post_id, 'jsd_rs_glob');
+					$jsd_recurring_time_interval_type = carbon_get_post_meta($post_id, 'jsd_rs_type');
+					$jsd_recurring_time_interval_start = $this->timeToSeconds(carbon_get_post_meta($post_id, 'jsd_rs_hours_start'));
+					$jsd_recurring_time_interval_end = $this->timeToSeconds(carbon_get_post_meta($post_id, 'jsd_rs_hours_finish'));
+
+					$jsd_current['id'] = $jsd_id; 
+					$jsd_current['css_display'] = $jsd_css_display; 
+					$jsd_current['sched_type'] = $jsd_sched_type; 
+					$jsd_current['uneve_intervals'] = $jsd_uneve_intervals; 
+					$jsd_current['recurring_schedule_day'] = $jsd_recurring_schedule_day; 
+					$jsd_current['recurring_time_interval_type'] = $jsd_recurring_time_interval_type; 
+					$jsd_current['recurring_time_interval_start'] = $jsd_recurring_time_interval_start; 
+					$jsd_current['recurring_time_interval_end'] = $jsd_recurring_time_interval_end; 
+					$jsd_arr[$jsd_id] = $jsd_current;
+				}
+			} 		
+			
+			$jsd_json = json_encode($jsd_arr);		
+			//write json to file
+			$jsFileUrl = plugin_dir_path( __FILE__ )."../public/js/schedule.js";
+			echo $jsFileUrl;
+			$fp = fopen($jsFileUrl, 'w+');
+			fwrite($fp, "var jsdSchedules = ".$jsd_json);
+			fclose($fp);
+		}
+	}
+
+	private function timeToSeconds($time) {
+		sscanf($time, "%d:%d:%d", $hours, $minutes, $seconds);
+		return $hours * 3600 + $minutes * 60 + $seconds;		
 	}
 }
