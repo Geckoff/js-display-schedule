@@ -19,6 +19,7 @@
 		this.populateEmptyField = function(field, populateWith) {
 			if (!field.val()) {
 				field.val(populateWith);	
+				field.attr('value', populateWith);
 			}
 		}
 	}
@@ -32,6 +33,7 @@
 			this.populateReccuringSchedHours();
 			this.toggleReccuringScheduleHours();
 			this.saveReccuringScheduleTime();
+			this.populateReccuringSchedStartDate();
 			this.eventHandlers();	
 		}
 
@@ -64,6 +66,11 @@
 			this.elementFunctions.populateEmptyField($('input[name=_jsd_rs_hours_finish]'), '11:59 PM')	
 		}
 
+		this.populateReccuringSchedStartDate = function(){
+			var date = this.getCurrentDate();
+			this.elementFunctions.populateEmptyField($('input[name=_jsd_reccuring_start_date]'), date);
+		}
+
 		// toggle display for Reccuring Schedule type time intervals
 		this.toggleReccuringScheduleHours = function(){
 			this.elementFunctions.toggleBlocksDisplay(
@@ -77,6 +84,10 @@
 		this.saveReccuringScheduleTime = function() {
 			$('#carbon_fields_container_recurring_display_schedule .carbon-time button').click();	
 			$('#carbon_fields_container_recurring_display_schedule .carbon-time button').click();	
+			$('#carbon_fields_container_recurring_display_schedule .carbon-date button').click();
+			$('#carbon_fields_container_recurring_display_schedule .carbon-date button').click();
+			//$('#carbon_fields_container_recurring_display_schedule .carbon-date button').click();
+			//$('#carbon_fields_container_recurring_display_schedule .carbon-date').click();
 		}
 
 		this.eventHandlers = function(){
@@ -93,6 +104,21 @@
 				that.toggleReccuringScheduleHours();
 				that.populateReccuringSchedHours();
 			});	
+		}
+
+		this.getCurrentDate = function() {
+			var today = new Date();
+			var dd = today.getDate();
+			var mm = today.getMonth()+1; //January is 0!
+			var yyyy = today.getFullYear();
+			if (dd < 10) {
+				dd = '0'+dd
+			} 
+			if ( mm < 10) {
+				mm = '0'+mm
+			} 
+
+			return yyyy + '-' + mm + '-' + dd;
 		}
 	}
 
