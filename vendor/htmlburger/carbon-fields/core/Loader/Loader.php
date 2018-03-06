@@ -2,13 +2,14 @@
 
 namespace Carbon_Fields\Loader;
 
-use Carbon_Fields\Pimple\Container as PimpleContainer;
 use Carbon_Fields\Container\Repository as ContainerRepository;
+use Carbon_Fields\Exception\Incorrect_Syntax_Exception;
+use Carbon_Fields\Helper\Helper;
+use Carbon_Fields\Libraries\Sidebar_Manager\Sidebar_Manager;
+use Carbon_Fields\Pimple\Container as PimpleContainer;
 use Carbon_Fields\Service\Legacy_Storage_Service_v_1_5;
 use Carbon_Fields\Service\Meta_Query_Service;
 use Carbon_Fields\Service\REST_API_Service;
-use Carbon_Fields\Libraries\Sidebar_Manager\Sidebar_Manager;
-use Carbon_Fields\Exception\Incorrect_Syntax_Exception;
 
 /**
  * Loader and main initialization
@@ -106,6 +107,8 @@ class Loader {
 	 * Initialize main scripts
 	 */
 	public function enqueue_scripts() {
+		$locale = get_locale();
+		$short_locale = substr( $locale, 0, 2 );
 		$suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : '.min';
 
 		wp_enqueue_style( 'carbon-fields-core', \Carbon_Fields\URL . '/assets/dist/carbon.css', array(), \Carbon_Fields\VERSION );
@@ -119,10 +122,14 @@ class Loader {
 			'compactInputKey' => \Carbon_Fields\COMPACT_INPUT_KEY,
 		) ) );
 		wp_localize_script( 'carbon-fields-vendor', 'carbonFieldsL10n', apply_filters( 'carbon_fields_l10n', array(
+			'locale' => $locale,
+			'shortLocale' => $short_locale,
+
 			'container' => array(
 				'pleaseFillTheRequiredFields' => __( 'Please fill out all required fields highlighted below.', 'carbon-fields' ),
 				'changesMadeSaveAlert' => __( 'The changes you made will be lost if you navigate away from this page.', 'carbon-fields' ),
 			),
+
 			'field' => array(
 				'geocodeZeroResults' => __( 'The address could not be found. ', 'carbon-fields' ),
 				'geocodeNotSuccessful' => __( 'Geocode was not successful for the following reason: ', 'carbon-fields' ),
@@ -212,7 +219,6 @@ class Loader {
 	 * @return array $carbon_data
 	 */
 	public function get_json_data() {
-		global $wp_registered_sidebars;
 		global $pagenow;
 
 		$carbon_data = array(
@@ -229,17 +235,7 @@ class Loader {
 			$carbon_data['containers'][] = $container_data;
 		}
 
-		foreach ( $wp_registered_sidebars as $sidebar ) {
-			// Check if we have inactive sidebars
-			if ( isset( $sidebar['class'] ) && strpos( $sidebar['class'], 'inactive-sidebar' ) !== false ) {
-				continue;
-			}
-
-			$carbon_data['sidebars'][] = array(
-				'name' => $sidebar['name'],
-				'id'   => $sidebar['id'],
-			);
-		}
+		$carbon_data['sidebars'] = Helper::get_active_sidebars();
 
 		return $carbon_data;
 	}
